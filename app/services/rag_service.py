@@ -3,6 +3,7 @@ from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 
 from app.core.config import settings
+from app.schemas.document import SourceReference
 from app.services.vector_store import vector_store_service
 
 _SYSTEM_PROMPT = (
@@ -44,7 +45,18 @@ class RAGService:
             }
 
         context = "\n\n---\n\n".join(r["content"] for r in results)
-        sources = sorted({r["metadata"]["filename"] for r in results})
+
+        # Deduplicate by (filename, page) and sort for a stable, readable order
+        seen: set[tuple] = set()
+        sources: list[SourceReference] = []
+        for r in results:
+            filename = r["metadata"]["filename"]
+            page = r["metadata"].get("page")  # present only for PDFs
+            key = (filename, page)
+            if key not in seen:
+                seen.add(key)
+                sources.append(SourceReference(filename=filename, page=page))
+        sources.sort(key=lambda s: (s.filename, s.page or 0))
 
         messages = [
             SystemMessage(content=_SYSTEM_PROMPT),

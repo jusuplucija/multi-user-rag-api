@@ -18,7 +18,12 @@ class QueryRequest(BaseModel):
     top_k: int = Field(default=5, ge=1, le=20)
 
 
+class SourceReference(BaseModel):
+    filename: str
+    page: int | None = None  # 1-indexed; None for plain-text files which have no pages
+
+
 class QueryResponse(BaseModel):
     query: str
     answer: str
-    sources: list[str]
+    sources: list[SourceReference]

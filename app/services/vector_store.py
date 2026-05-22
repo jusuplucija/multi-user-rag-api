@@ -30,15 +30,25 @@ class VectorStoreService:
             metadata={"hnsw:space": "cosine"},
         )
 
-    def add_chunks(self, user_id: int, document_id: int, chunks: list[str], filename: str) -> None:
+    def add_chunks(
+        self,
+        user_id: int,
+        document_id: int,
+        chunks: list[str],
+        filename: str,
+        pages: list[int | None] | None = None,
+    ) -> None:
         if not chunks:
             return
         embeddings = self._embedding_model().encode(chunks, show_progress_bar=False).tolist()
         ids = [f"doc_{document_id}_chunk_{i}" for i in range(len(chunks))]
-        metadatas = [
-            {"document_id": document_id, "filename": filename, "chunk_index": i}
-            for i in range(len(chunks))
-        ]
+        metadatas = []
+        for i in range(len(chunks)):
+            meta: dict = {"document_id": document_id, "filename": filename, "chunk_index": i}
+            page = pages[i] if pages else None
+            if page is not None:
+                meta["page"] = page  # ChromaDB requires no None values in metadata
+            metadatas.append(meta)
         self._collection(user_id).add(ids=ids, embeddings=embeddings, documents=chunks, metadatas=metadatas)
 
     def search(self, user_id: int, query: str, top_k: int = 5) -> list[dict]:

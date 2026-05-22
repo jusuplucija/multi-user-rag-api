@@ -133,13 +133,15 @@ def test_query_with_answer(client, auth_headers):
         mock_query.return_value = {
             "query": "What is machine learning?",
             "answer": "Machine learning is a subset of AI.",
-            "sources": ["doc.txt"],
+            "sources": [{"filename": "doc.txt", "page": 3}],
         }
         resp = client.post("/query/", json={"query": "What is machine learning?"}, headers=auth_headers)
     assert resp.status_code == 200
     data = resp.json()
     assert data["answer"] == "Machine learning is a subset of AI."
-    assert "doc.txt" in data["sources"]
+    source = data["sources"][0]
+    assert source["filename"] == "doc.txt"
+    assert source["page"] == 3
 
 
 def test_query_requires_auth(client):

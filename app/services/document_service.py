@@ -44,10 +44,18 @@ class DocumentService:
 
         raw_docs = loader.load()
         chunks = self._splitter.split_documents(raw_docs)
-        texts = [c.page_content for c in chunks if c.page_content.strip()]
+
+        texts: list[str] = []
+        pages: list[int | None] = []
+        for chunk in chunks:
+            if chunk.page_content.strip():
+                texts.append(chunk.page_content)
+                raw_page = chunk.metadata.get("page")
+                # PyPDFLoader uses 0-indexed pages; convert to 1-indexed for humans
+                pages.append(int(raw_page) + 1 if raw_page is not None else None)
 
         if texts:
-            vector_store_service.add_chunks(user_id, document_id, texts, filename)
+            vector_store_service.add_chunks(user_id, document_id, texts, filename, pages)
 
     def delete_file(self, file_path: str) -> None:
         path = Path(file_path)
