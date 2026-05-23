@@ -1,11 +1,16 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.db.database import get_db
 from app.models.document import Document
 from app.models.user import User
-from app.schemas.document import DocumentResponse
+from app.schemas.document import (
+    DocumentResponse,
+    DocumentSortBy,
+    PaginatedDocumentsResponse,
+    SortOrder,
+)
 from app.services.document_service import document_service
 from app.services.vector_store import vector_store_service
 
@@ -61,15 +66,40 @@ async def upload_document(
 
 @router.get(
     "/",
-    response_model=list[DocumentResponse],
+    response_model=PaginatedDocumentsResponse,
     summary="List my documents",
-    description="Return all documents uploaded by the authenticated user.",
+    description=(
+        "Return documents uploaded by the authenticated user. "
+        "Supports pagination, sorting by filename / created_at / content_type, "
+        "and filtering by filename (partial, case-insensitive) or content_type (exact)."
+    ),
 )
 def list_documents(
+    page: int = Query(default=1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(default=10, ge=1, le=100, description="Items per page"),
+    sort_by: DocumentSortBy = Query(default=DocumentSortBy.created_at, description="Field to sort by"),
+    sort_order: SortOrder = Query(default=SortOrder.desc, description="Sort direction"),
+    filename: str | None = Query(default=None, description="Filter by filename (partial match)"),
+    content_type: str | None = Query(default=None, description="Filter by content type (exact match)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return db.query(Document).filter(Document.user_id == current_user.id).all()
+    query = db.query(Document).filter(Document.user_id == current_user.id)
+
+    if filename:
+        query = query.filter(Document.filename.ilike(f"%{filename}%"))
+    if content_type:
+        query = query.filter(Document.content_type == content_type)
+
+    total = query.count()
+
+    sort_column = getattr(Document, sort_by.value)
+    if sort_order == SortOrder.desc:
+        sort_column = sort_column.desc()
+
+    items = query.order_by(sort_column).offset((page - 1) * page_size).limit(page_size).all()
+
+    return PaginatedDocumentsResponse(total=total, page=page, page_size=page_size, items=items)
 
 
 @router.delete(

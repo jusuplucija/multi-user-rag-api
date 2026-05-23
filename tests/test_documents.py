@@ -63,9 +63,49 @@ def test_list_documents(mock_index, mock_save, client, auth_headers):
     _upload(client, auth_headers, filename="b.txt")
     resp = client.get("/documents/", headers=auth_headers)
     assert resp.status_code == 200
-    names = [d["filename"] for d in resp.json()]
+    data = resp.json()
+    assert data["total"] == 2
+    assert data["page"] == 1
+    names = [d["filename"] for d in data["items"]]
     assert "a.txt" in names
     assert "b.txt" in names
+
+
+@patch("app.api.documents.document_service.save_file", return_value="/tmp/doc.txt")
+@patch("app.api.documents.document_service.process_and_index")
+def test_list_documents_pagination(mock_index, mock_save, client, auth_headers):
+    for i in range(5):
+        _upload(client, auth_headers, filename=f"doc{i}.txt")
+    resp = client.get("/documents/?page=1&page_size=2", headers=auth_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 5
+    assert data["page_size"] == 2
+    assert len(data["items"]) == 2
+
+
+@patch("app.api.documents.document_service.save_file", return_value="/tmp/doc.txt")
+@patch("app.api.documents.document_service.process_and_index")
+def test_list_documents_filter_by_filename(mock_index, mock_save, client, auth_headers):
+    _upload(client, auth_headers, filename="report.txt")
+    _upload(client, auth_headers, filename="notes.txt")
+    resp = client.get("/documents/?filename=report", headers=auth_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 1
+    assert data["items"][0]["filename"] == "report.txt"
+
+
+@patch("app.api.documents.document_service.save_file", return_value="/tmp/doc.txt")
+@patch("app.api.documents.document_service.process_and_index")
+def test_list_documents_filter_by_content_type(mock_index, mock_save, client, auth_headers):
+    _upload(client, auth_headers, filename="a.txt", ctype="text/plain")
+    _upload(client, auth_headers, filename="b.pdf", ctype="application/pdf")
+    resp = client.get("/documents/?content_type=text%2Fplain", headers=auth_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 1
+    assert data["items"][0]["content_type"] == "text/plain"
 
 
 @patch("app.api.documents.document_service.save_file", return_value="/tmp/doc.txt")
@@ -82,7 +122,7 @@ def test_user_isolation(mock_index, mock_save, client):
     h1, h2 = login("u1@x.com"), login("u2@x.com")
     _upload(client, h1, filename="private.txt")
 
-    assert client.get("/documents/", headers=h2).json() == []
+    assert client.get("/documents/", headers=h2).json()["items"] == []
 
 
 @patch("app.api.documents.document_service.save_file", return_value="/tmp/doc.txt")
@@ -96,7 +136,7 @@ def test_delete_document(mock_del_file, mock_del_vec, mock_index, mock_save, cli
     resp = client.delete(f"/documents/{doc_id}", headers=auth_headers)
     assert resp.status_code == 204
 
-    listed = client.get("/documents/", headers=auth_headers).json()
+    listed = client.get("/documents/", headers=auth_headers).json()["items"]
     assert all(d["id"] != doc_id for d in listed)
 
 

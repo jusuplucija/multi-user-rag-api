@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -11,6 +12,24 @@ class DocumentResponse(BaseModel):
     filename: str
     content_type: str
     created_at: datetime
+
+
+class DocumentSortBy(str, Enum):
+    filename = "filename"
+    created_at = "created_at"
+    content_type = "content_type"
+
+
+class SortOrder(str, Enum):
+    asc = "asc"
+    desc = "desc"
+
+
+class PaginatedDocumentsResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[DocumentResponse]
 
 
 class QueryRequest(BaseModel):

@@ -17,6 +17,7 @@ chromadb
 sentence-transformers
 pypdf
 httpx
+requests
 pytest
 pytest-asyncio
 email-validator
