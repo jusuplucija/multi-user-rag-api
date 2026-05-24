@@ -1,7 +1,5 @@
 """
-Script 1 - User Registration
-
-Demonstrates:
+Testing:
   - Registering a new user (success)
   - Attempting to register the same email again (duplicate email error)
   - Attempting to register the same username again (duplicate username error)
@@ -15,8 +13,8 @@ import requests
 BASE_URL = "http://localhost:8000"
 
 USER = {
-    "username": "alice",
-    "email": "alice@example.com",
+    "username": "ljusup",
+    "email": "ljusup@example.com",
     "password": "secret123",
 }
 
@@ -44,7 +42,7 @@ else:
 print("\n[2] Trying to register with the same email again...")
 resp = requests.post(
     f"{BASE_URL}/auth/register",
-    json={**USER, "username": "alice2"},
+    json={**USER, "username": "ljusup2"},
 )
 print_response("POST /auth/register - duplicate email", resp)
 
@@ -56,7 +54,7 @@ if resp.status_code == 400:
 print("\n[3] Trying to register with the same username again...")
 resp = requests.post(
     f"{BASE_URL}/auth/register",
-    json={**USER, "email": "other@example.com"},
+    json={**USER, "email": "ljusup2@example.com"},
 )
 print_response("POST /auth/register - duplicate username", resp)
 

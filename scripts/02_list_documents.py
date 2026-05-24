@@ -1,7 +1,5 @@
 """
-Script 2 - Login and List Documents
-
-Demonstrates:
+Testing:
   - Logging in and receiving a JWT token
   - Fetching the current user profile
   - Listing documents with pagination and sorting
@@ -17,8 +15,8 @@ import requests
 BASE_URL = "http://localhost:8000"
 
 CREDENTIALS = {
-    "email": "alice@example.com",
-    "password": "secret123",
+    "email": "lucija@example.com",
+    "password": "123456",
 }
 
 

@@ -1,7 +1,5 @@
 """
-Script 3 - Login and Delete a Document
-
-Demonstrates:
+Testing:
   - Logging in to get a JWT token
   - Listing documents to find a document ID
   - Deleting a document by ID
@@ -18,7 +16,7 @@ import requests
 BASE_URL = "http://localhost:8000"
 
 CREDENTIALS = {
-    "email": "alice@example.com",
+    "email": "ljusup@example.com",
     "password": "secret123",
 }
 
