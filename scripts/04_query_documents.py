@@ -28,7 +28,7 @@ headers = {
     "Content-Type": "application/json"
 }
 payload = {
-    "query": "What percentage of the global population lives in countries classified as having High and Very high risk of humanitarian crises?",
+    "query": "",
     "top_k": 5
 }
 
